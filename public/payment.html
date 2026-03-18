@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Foodtruck Payment</title>
+  <script type="text/javascript" src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    #card-container {
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 12px;
+      width: 100%;
+      background: #0078ff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Complete Your Payment</h2>
+
+  <div id="card-container"></div>
+  <button id="card-button">Pay Now</button>
+
+  <script>
+    async function initializeSquare() {
+      const payments = Square.payments(
+        "{{SQUARE_APP_ID}}",
+        "{{SQUARE_LOCATION_ID}}"
+      );
+
+      const card = await payments.card();
+      await card.attach("#card-container");
+
+      document.getElementById("card-button").addEventListener("click", async () => {
+        const result = await card.tokenize();
+        if (result.status === "OK") {
+          const token = result.token;
+
+          const amount = new URLSearchParams(window.location.search).get("amount");
+
+          const response = await fetch("/api/pay", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sourceId: token,
+              amount: parseFloat(amount)
+            })
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            alert("Payment successful!");
+          } else {
+            alert("Payment failed");
+          }
+        }
+      });
+    }
+
+    initializeSquare();
+  </script>
+
+</body>
+</html>
